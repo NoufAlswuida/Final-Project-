@@ -1,4 +1,4 @@
-# Final Project ( Smart )
+# Final Project ( Smart Agriculture )
  contain : PDF desc , jupyter notebook , PowerPoint , Python Code
  
  Abstract 
