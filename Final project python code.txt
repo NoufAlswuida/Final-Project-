@@ -1,0 +1,397 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[3]:
+
+
+pip install seaborn
+
+
+# In[6]:
+
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import seaborn as sns
+import matplotlib.pyplot as plt
+from datetime import timedelta
+get_ipython().run_line_magic('matplotlib', 'inline')
+plt.style.use('ggplot')
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import StandardScaler
+
+
+# In[57]:
+
+
+data = pd.read_csv('irrigation.csv')
+data.head(100)
+
+
+# In[8]:
+
+
+data.shape
+
+
+# In[9]:
+
+
+data.info()
+
+
+# In[10]:
+
+
+print(f'The number of rows are {data.shape[0] } and the number of columns are {data.shape[1]}')
+
+
+# In[11]:
+
+
+#Finding all the categorical and continuous values
+categorical_col=[]
+continuous_val=[]
+
+
+for i in data.columns:
+    
+    if data[i].dtype == 'object':
+        categorical_col.append(i)
+    else:
+        continuous_val.append(i)
+        
+print(categorical_col)
+print(continuous_val)
+
+
+# In[12]:
+
+
+data.nunique()
+
+
+# In[13]:
+
+
+data.isnull().sum()
+
+
+# # Visualizing the missing values
+
+# In[14]:
+
+
+# Complete the call to convert the date column
+data['timestamp'] =  pd.to_datetime(data['timestamp'])
+
+# Confirm the date column is in datetime format
+print(data.info())
+
+
+# In[15]:
+
+
+data.head(30)
+
+
+# In[16]:
+
+
+data.head()
+
+
+# In[17]:
+
+
+data_new = data.iloc[:,2:15]
+sns.heatmap(data_new)
+plt.show()
+
+
+# # Dealing with the missing values
+
+# In[18]:
+
+
+#Checking percentage of missing data in every column
+(data.isnull().sum()/len(data))*100
+
+
+# In[19]:
+
+
+#Filling the missing values for continuous variables with mean
+data['Soil humidity 1']=data['Soil humidity 1'].fillna(data['Soil humidity 1'].mean())
+#data['Irrigation field 1']=data['Irrigation field 1'].fillna(data['Irrigation field 1'].mean())
+
+
+# In[20]:
+
+
+# Delete the null values is the better souluation 
+data=data[data['Irrigation field 1'].notna()]
+
+
+# In[21]:
+
+
+#check if the nan value fill or not by calculate the perc %
+(data.isnull().sum()/len(data))*100
+
+
+# In[22]:
+
+
+data['Soil humidity 2']=data['Soil humidity 2'].fillna(data['Soil humidity 2'].mean())
+data['Irrigation field 2']=data['Irrigation field 2'].fillna(data['Irrigation field 2'].mean()) 
+
+data['Soil humidity 3']=data['Soil humidity 3'].fillna(data['Soil humidity 3'].mean())
+data['Irrigation field 3']=data['Irrigation field 3'].fillna(data['Irrigation field 3'].mean()) 
+
+data['Soil humidity 4']=data['Soil humidity 4'].fillna(data['Soil humidity 4'].mean())
+data['Irrigation field 4']=data['Irrigation field 4'].fillna(data['Irrigation field 4'].mean()) 
+
+data['Air temperature (C)']=data['Air temperature (C)'].fillna(data['Air temperature (C)'].mean())
+data['Air humidity (%)']=data['Air humidity (%)'].fillna(data['Air humidity (%)'].mean())
+data['Pressure (KPa)']=data['Pressure (KPa)'].fillna(data['Pressure (KPa)'].mean())
+data['Wind speed (Km/h)']=data['Wind speed (Km/h)'].fillna(data['Wind speed (Km/h)'].mean())
+data['Wind gust (Km/h)']=data['Wind gust (Km/h)'].fillna(data['Wind gust (Km/h)'].mean())
+data['Wind direction (Deg)']=data['Wind direction (Deg)'].fillna(data['Wind direction (Deg)'].mean())
+
+
+
+# In[23]:
+
+
+#check if the nan value fill or not by calculate the perc %
+(data.isnull().sum()/len(data))*100
+
+
+# In[24]:
+
+
+# check the data type of the data frame 
+print(data.dtypes)
+  
+# print dataframe. 
+data.head(5)
+
+
+# In[25]:
+
+
+plt.figure(figsize=(16,5))
+heatmap = sns.heatmap(data.corr(), vmin=-1, vmax=1, annot=True)
+heatmap.set_title('Correlation Heatmap Of The project', fontdict={'fontsize':40}, pad=40);
+
+
+# # Plotting and Visualizing Data
+
+# In[26]:
+
+
+sns.stripplot(x="Irrigation field 1", y="Soil humidity 1", data=data, jitter=True)
+
+
+# In[36]:
+
+
+#graph of a pair plot that shows the relations between all of the different features
+sns.pairplot(data, hue='Irrigation field 1');
+
+
+# In[39]:
+
+
+sns.stripplot(x='Soil humidity 1',y='Irrigation field 1', jitter=True,data=data,alpha=0.6);
+
+
+# # The objective of this project is to accurately predict the soil moisture level multiple days in advance. This solution will help farmers prepare their irrigation schedules more efficiently.
+
+# In[27]:
+
+
+col_names=data.columns.values
+print(col_names)
+
+
+# In[42]:
+
+
+#split dataset in features and target variable
+feature_cols = ['Soil humidity 1','Irrigation field 3' ]#,'Air temperature (C)','Air humidity (%)']
+x = data[feature_cols] # Features
+target_col = 'Irrigation field 1'
+y = data[target_col] # Target variable
+
+
+# ## Dataset is broken into two parts in a ratio of 75:25. It means 75% data will be used for model training and 25% for model testing.
+
+# In[43]:
+
+
+# split X and y into training and testing sets
+from sklearn.model_selection import train_test_split
+
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.25,random_state=0)
+#convert from float to int
+#y_train = y_train.astype('int32')
+x_train.shape , y_train.shape , x_train.head() ,y_train.head()
+
+
+# # Model Development and Prediction
+
+# In[68]:
+
+
+# import the sklearn library for logistic regression:
+from sklearn.linear_model import LogisticRegression
+
+# instantiate the model (using the default parameters)
+lr = LogisticRegression()
+
+# fit the model with data # Training it by using our train data:
+y_train=np.asarray(y_train)
+lr.fit(x_train,y_train)
+
+#Predicted the irrigation of feild 1 
+y_pred=lr.predict(x_test)
+
+#Calculate the accuracy of the model :
+acc_lr = accuracy_score(y_test, y_pred)
+
+print(acc_lr)
+
+# score1 = get_scorer('roc_auc')(lr, X_test, y_test)
+# print (score1)
+
+
+# In[76]:
+
+
+y_train.value_counts()
+
+
+# In[45]:
+
+
+print(y_pred)
+print(y_train)
+
+
+# In[47]:
+
+
+type(y_train),type(y_pred)
+
+
+# # The ROC curve
+
+# In[93]:
+
+
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+clf = LogisticRegression(solver="liblinear", random_state=0).fit(x, y)
+print("ROC AUC score = ", roc_auc_score(y_test, clf.predict_proba(x_test)[:, 1]))
+from sklearn.metrics import roc_auc_score, roc_curve
+fpr, tpr, thresholds = roc_curve(y_test, clf.predict_proba(x_test)[:,1])
+
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.title('ROC curve for Irrigation problem');
+plt.plot(fpr, tpr,lw=2)
+plt.plot([0,1],[0,1],c='black',ls='--')
+plt.xlim([-0.05,1.05])
+plt.ylim([-0.05,1.05])
+
+
+# In[50]:
+
+
+#KNeighbors Model
+from sklearn.neighbors import KNeighborsClassifier
+knn_clf = KNeighborsClassifier()
+knn_clf.fit(x_train, y_train)
+pred_knn = knn_clf.predict(x_test)
+acc_knn = accuracy_score(y_test, pred_knn)
+
+print(acc_knn)
+
+
+# # The ROC curve
+
+# In[95]:
+
+
+from sklearn.metrics import auc
+knn = KNeighborsClassifier(n_neighbors = 10)
+knn.fit(x_train,y_train)
+
+y_scores = knn.predict_proba(x_test)
+fpr, tpr, threshold = roc_curve(y_test, y_scores[:, 1])
+roc_auc = auc(fpr, tpr)
+print("ROC AUC score of KNN = ", roc_auc)
+plt.title('Receiver Operating Characteristic')
+plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+plt.legend(loc = 'lower right')
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.title('ROC Curve of kNN')
+plt.show()
+
+
+# In[49]:
+
+
+#RandomForest Model
+from sklearn.ensemble import RandomForestClassifier
+rf_clf = RandomForestClassifier()
+rf_clf.fit(x_train, y_train)
+pred_rf = rf_clf.predict(x_test)
+acc_rf = accuracy_score(y_test, pred_rf)
+
+print(acc_rf)
+
+
+# In[51]:
+
+
+#DecisionTree Model
+from sklearn.tree import DecisionTreeClassifier
+dt_clf = DecisionTreeClassifier()
+dt_clf.fit(x_train, y_train)
+pred_dt = dt_clf.predict(x_test)
+acc_dt = accuracy_score(y_test, pred_dt)
+
+
+print(acc_dt)
+
+
+# In[59]:
+
+
+model_performance = pd.DataFrame({
+    "Model": ["Random Forest", 
+              "Logistic Regression", "K Nearest Neighbors",  
+              "Decision Tree"],
+    "Accuracy": [acc_rf, 
+              acc_lr, acc_knn, acc_dt]
+})
+
+model_performance.sort_values(by="Accuracy", ascending=False)
+
+
+# In[ ]:
+
+
+
+
